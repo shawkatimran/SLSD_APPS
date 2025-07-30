@@ -31,8 +31,13 @@ class TransferMutationPage(BasePage):
     EMAIL_ADDRESS = (By.ID, 'email_address')
     INSTITUTE_ADDRESS = (By.ID, 'institute_address')
     
-    # Mortgage Options
+    # Mortgage Options - Radio buttons/checkboxes and their labels
+    MORTGAGE_YES_RADIO = (By.ID, "mortgageYes")
+    MORTGAGE_YES_LABEL = (By.XPATH, '//label[@for="mortgageYes"]')
     MORTGAGE_YES = (By.XPATH, '//label[@for="mortgageYes"]')
+    
+    MORTGAGE_DEED_YES_RADIO = (By.ID, "mortgageDeedYes")
+    MORTGAGE_DEED_YES_LABEL = (By.XPATH, '//label[@for="mortgageDeedYes"]')
     MORTGAGE_DEED_YES = (By.XPATH, '//label[@for="mortgageDeedYes"]')
     
     # File Uploads
@@ -246,20 +251,313 @@ class TransferMutationPage(BasePage):
             print(f"Failed to fill institute information: {e}")
             return False
 
+    def select_mortgage_yes(self):
+        """Select 'Yes' for mortgage permission with enhanced strategies"""
+        try:
+            print("Attempting to select 'Yes' for mortgage permission...")
+            
+            # Strategy 1: Direct radio button selection with multiple attempts
+            try:
+                print("Strategy 1: Clicking mortgage radio button directly")
+                input_element = self.wait.until(EC.presence_of_element_located(self.MORTGAGE_YES_RADIO))
+                
+                # Scroll to element and make it visible
+                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", input_element)
+                time.sleep(1)
+                
+                # Make sure element is visible and enabled
+                self.driver.execute_script("arguments[0].style.display = 'block'; arguments[0].style.visibility = 'visible';", input_element)
+                time.sleep(1)
+                
+                # Check if already selected
+                if input_element.is_selected():
+                    print("Mortgage radio button is already selected.")
+                    return True
+                
+                # Try clicking directly first
+                try:
+                    # Wait for clickable
+                    clickable_element = self.wait.until(EC.element_to_be_clickable(self.MORTGAGE_YES_RADIO))
+                    clickable_element.click()
+                    print("Mortgage radio button clicked directly.")
+                    time.sleep(1)
+                    
+                    # Verify selection
+                    if clickable_element.is_selected():
+                        print("Mortgage radio button successfully selected.")
+                        return True
+                        
+                except Exception as click_e:
+                    print(f"Direct click failed: {click_e}")
+                    
+                # Try JavaScript click
+                try:
+                    self.driver.execute_script("arguments[0].click();", input_element)
+                    print("Mortgage radio button clicked with JavaScript.")
+                    time.sleep(1)
+                    
+                    # Verify selection
+                    if input_element.is_selected():
+                        print("Mortgage radio button successfully selected with JS.")
+                        return True
+                        
+                except Exception as js_e:
+                    print(f"JavaScript click failed: {js_e}")
+                    
+            except Exception as e:
+                print(f"Strategy 1 failed: {e}")
+            
+            # Strategy 2: Click the associated label
+            try:
+                print("Strategy 2: Clicking the mortgage label")
+                label = self.wait.until(EC.presence_of_element_located(self.MORTGAGE_YES_LABEL))
+                
+                # Scroll to label
+                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", label)
+                time.sleep(1)
+                
+                # Try normal click on label
+                try:
+                    label.click()
+                    print("Mortgage label clicked successfully.")
+                    time.sleep(1)
+                    
+                    # Check if radio button is now selected
+                    radio_input = self.driver.find_element(*self.MORTGAGE_YES_RADIO)
+                    if radio_input.is_selected():
+                        print("Radio button selected via label click.")
+                        return True
+                        
+                except Exception as label_click_e:
+                    print(f"Label click failed: {label_click_e}")
+                    
+                # Try JavaScript click on label
+                try:
+                    self.driver.execute_script("arguments[0].click();", label)
+                    print("Mortgage label clicked with JavaScript.")
+                    time.sleep(1)
+                    
+                    # Check if radio button is now selected
+                    radio_input = self.driver.find_element(*self.MORTGAGE_YES_RADIO)
+                    if radio_input.is_selected():
+                        print("Radio button selected via JS label click.")
+                        return True
+                        
+                except Exception as js_label_e:
+                    print(f"JS label click failed: {js_label_e}")
+                    
+            except Exception as e:
+                print(f"Strategy 2 failed: {e}")
+            
+            # Strategy 3: JavaScript programmatic selection
+            try:
+                print("Strategy 3: Using JavaScript to programmatically set mortgage option")
+                self.driver.execute_script("""
+                    var element = document.getElementById('mortgageYes');
+                    if (element) {
+                        element.checked = true;
+                        element.click();
+                        
+                        // Trigger events
+                        var changeEvent = new Event('change', { bubbles: true });
+                        var clickEvent = new Event('click', { bubbles: true });
+                        element.dispatchEvent(changeEvent);
+                        element.dispatchEvent(clickEvent);
+                        
+                        // Also try triggering input event
+                        var inputEvent = new Event('input', { bubbles: true });
+                        element.dispatchEvent(inputEvent);
+                    }
+                """)
+                print("Mortgage option set with JavaScript programmatically.")
+                time.sleep(2)
+                
+                # Verify selection
+                try:
+                    radio_input = self.driver.find_element(*self.MORTGAGE_YES_RADIO)
+                    if radio_input.is_selected():
+                        print("Radio button successfully selected programmatically.")
+                        return True
+                except:
+                    pass
+                    
+            except Exception as e:
+                print(f"Strategy 3 failed: {e}")
+            
+            # Strategy 4: Find by text and click
+            try:
+                print("Strategy 4: Finding mortgage option by text content")
+                # Look for text that might be associated with mortgage yes option
+                text_elements = self.driver.find_elements(By.XPATH, "//label[contains(text(), 'হ্যাঁ') or contains(text(), 'Yes')]")
+                
+                for element in text_elements:
+                    try:
+                        # Check if this label is for mortgageYes
+                        for_attr = element.get_attribute('for')
+                        if for_attr == 'mortgageYes':
+                            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
+                            time.sleep(1)
+                            self.driver.execute_script("arguments[0].click();", element)
+                            print("Found mortgage yes label by text and clicked.")
+                            time.sleep(1)
+                            
+                            # Verify
+                            radio_input = self.driver.find_element(*self.MORTGAGE_YES_RADIO)
+                            if radio_input.is_selected():
+                                print("Radio button selected via text search.")
+                                return True
+                    except:
+                        continue
+                        
+            except Exception as e:
+                print(f"Strategy 4 failed: {e}")
+            
+            # Strategy 5: Force selection with form manipulation
+            try:
+                print("Strategy 5: Force selection with form manipulation")
+                self.driver.execute_script("""
+                    // Find the mortgage radio button
+                    var mortgageRadio = document.getElementById('mortgageYes');
+                    if (mortgageRadio) {
+                        // Force visibility and enable
+                        mortgageRadio.style.display = 'block';
+                        mortgageRadio.style.visibility = 'visible';
+                        mortgageRadio.disabled = false;
+                        mortgageRadio.readonly = false;
+                        
+                        // Set checked state
+                        mortgageRadio.checked = true;
+                        mortgageRadio.value = 'yes';
+                        
+                        // Trigger all possible events
+                        ['click', 'change', 'input', 'focus', 'blur'].forEach(function(eventType) {
+                            var event = new Event(eventType, { bubbles: true, cancelable: true });
+                            mortgageRadio.dispatchEvent(event);
+                        });
+                        
+                        // Also trigger jQuery events if available
+                        if (typeof jQuery !== 'undefined') {
+                            jQuery(mortgageRadio).trigger('click').trigger('change');
+                        }
+                    }
+                """)
+                print("Force selection attempted.")
+                time.sleep(2)
+                
+                # Final verification
+                try:
+                    radio_input = self.driver.find_element(*self.MORTGAGE_YES_RADIO)
+                    if radio_input.is_selected():
+                        print("Radio button successfully force-selected.")
+                        return True
+                except:
+                    pass
+                    
+            except Exception as e:
+                print(f"Strategy 5 failed: {e}")
+            
+            print("All strategies failed for mortgage selection!")
+            return False
+            
+        except Exception as e:
+            print(f"Critical error in select_mortgage_yes: {e}")
+            return False
+
+    def select_mortgage_deed_yes(self):
+        """Select 'Yes' for mortgage deed"""
+        try:
+            print("Attempting to select 'Yes' for mortgage deed...")
+            
+            # Strategy 1: Click the radio button/checkbox input directly
+            try:
+                print("Strategy 1: Clicking mortgage deed input directly")
+                input_element = self.wait.until(EC.presence_of_element_located(self.MORTGAGE_DEED_YES_RADIO))
+                
+                # Scroll to element
+                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", input_element)
+                time.sleep(1)
+                
+                # Check if already selected
+                if input_element.is_selected():
+                    print("Mortgage deed option is already selected.")
+                    return True
+                
+                # Try clicking directly
+                try:
+                    input_element.click()
+                    print("Mortgage deed input clicked directly.")
+                    return True
+                except:
+                    # Try JavaScript click
+                    self.driver.execute_script("arguments[0].click();", input_element)
+                    print("Mortgage deed input clicked with JavaScript.")
+                    return True
+                    
+            except Exception as e:
+                print(f"Strategy 1 failed: {e}")
+            
+            # Strategy 2: Click the label
+            try:
+                print("Strategy 2: Clicking the mortgage deed label")
+                label = self.wait.until(EC.element_to_be_clickable(self.MORTGAGE_DEED_YES_LABEL))
+                
+                # Scroll to label
+                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", label)
+                time.sleep(1)
+                
+                try:
+                    label.click()
+                    print("Mortgage deed label clicked successfully.")
+                    return True
+                except:
+                    self.driver.execute_script("arguments[0].click();", label)
+                    print("Mortgage deed label clicked with JavaScript.")
+                    return True
+                    
+            except Exception as e:
+                print(f"Strategy 2 failed: {e}")
+            
+            # Strategy 3: JavaScript selection
+            try:
+                print("Strategy 3: Using JavaScript to set mortgage deed option")
+                self.driver.execute_script("""
+                    var element = document.getElementById('mortgageDeedYes');
+                    if (element) {
+                        element.checked = true;
+                        element.dispatchEvent(new Event('change', { bubbles: true }));
+                        element.dispatchEvent(new Event('click', { bubbles: true }));
+                    }
+                """)
+                print("Mortgage deed option set with JavaScript.")
+                return True
+                
+            except Exception as e:
+                print(f"Strategy 3 failed: {e}")
+            
+            print("All strategies failed for mortgage deed selection!")
+            return False
+            
+        except Exception as e:
+            print(f"Critical error in select_mortgage_deed_yes: {e}")
+            return False
+
     def select_mortgage_options(self):
         """Select mortgage related options"""
         try:
             # Select mortgage permission yes
-            mortgage_yes = self.wait.until(EC.element_to_be_clickable(self.MORTGAGE_YES))
-            self.driver.execute_script("arguments[0].scrollIntoView(true);", mortgage_yes)
-            mortgage_yes.click()
-            print("Mortgage permission 'Yes' selected.")
+            if not self.select_mortgage_yes():
+                print("Failed to select mortgage permission option.")
+                return False
             
             # Select mortgage deed yes
-            self.click(self.MORTGAGE_DEED_YES)
-            print("Mortgage deed 'Yes' selected.")
+            if not self.select_mortgage_deed_yes():
+                print("Failed to select mortgage deed option.")
+                return False
+                
+            print("All mortgage options selected successfully.")
             return True
-        except (TimeoutException, ElementNotInteractableException) as e:
+            
+        except Exception as e:
             print(f"Failed to select mortgage options: {e}")
             return False
 
