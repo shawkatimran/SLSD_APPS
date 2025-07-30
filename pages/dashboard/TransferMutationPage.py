@@ -11,8 +11,15 @@ class TransferMutationPage(BasePage):
     DROPDOWN_ITEM = (By.XPATH, '//a[contains(@href, "plot-flat-transfer/list") and contains(text(), "প্লট/ফ্ল্যাট হস্তান্তর ও নামজারি")]')
     NEW_APPLICATION_BUTTON = (By.XPATH, '//button[contains(text(), "নতুন আবেদন")]')
     
-    # Source of Transfer
+    # Source of Transfer - Radio button and its label
+    SOURCE_OF_TRANSFER_BUY_RADIO = (By.ID, "transfer_rules_1")
+    SOURCE_OF_TRANSFER_BUY_LABEL = (By.XPATH, '//label[@for="transfer_rules_1"]')
     SOURCE_OF_TRANSFER_BUY = (By.XPATH, '//label[@for="transfer_rules_1" and contains(text(), "ক্রয়")]')
+    SOURCE_OF_TRANSFER_BUY_ALT1 = (By.XPATH, "//label[contains(text(), 'ক্রয়')]")
+    SOURCE_OF_TRANSFER_BUY_ALT2 = (By.XPATH, "//input[@id='transfer_rules_1']/../label")
+    SOURCE_OF_TRANSFER_BUY_ALT3 = (By.ID, "transfer_rules_1")
+
+    
     
     # Plot/Flat Type
     PLOT_FLAT_TYPE_RESIDENTIAL = (By.XPATH, '//label[@for="customer_rules_1" and contains(text(), "আবাসিক")]')
@@ -86,13 +93,125 @@ class TransferMutationPage(BasePage):
             return False
 
     def select_source_of_transfer_buy(self):
-        """Select 'ক্রয়' as source of transfer"""
+        """Select 'ক্রয়' radio button as source of transfer"""
         try:
-            self.click(self.SOURCE_OF_TRANSFER_BUY)
-            print("Source of Transfer (Buy) selected.")
-            return True
-        except (TimeoutException, ElementNotInteractableException) as e:
-            print(f"Failed to select source of transfer: {e}")
+            print("Attempting to select 'ক্রয়' radio button...")
+            
+            # Strategy 1: Click the radio button input directly
+            try:
+                print("Strategy 1: Clicking radio button input directly")
+                radio_input = self.wait.until(EC.presence_of_element_located(self.SOURCE_OF_TRANSFER_BUY_RADIO))
+                
+                # Scroll to radio button
+                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", radio_input)
+                time.sleep(1)
+                
+                # Check if already selected
+                if radio_input.is_selected():
+                    print("Radio button is already selected.")
+                    return True
+                
+                # Try clicking the radio button directly
+                try:
+                    radio_input.click()
+                    print("Radio button clicked directly.")
+                    return True
+                except:
+                    # Try JavaScript click on radio button
+                    self.driver.execute_script("arguments[0].click();", radio_input)
+                    print("Radio button clicked with JavaScript.")
+                    return True
+                    
+            except Exception as e:
+                print(f"Strategy 1 failed: {e}")
+            
+            # Strategy 2: Click the label associated with the radio button
+            try:
+                print("Strategy 2: Clicking the label for the radio button")
+                label = self.wait.until(EC.element_to_be_clickable(self.SOURCE_OF_TRANSFER_BUY_LABEL))
+                
+                # Scroll to label
+                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", label)
+                time.sleep(1)
+                
+                # Try normal click on label
+                try:
+                    label.click()
+                    print("Label clicked successfully.")
+                    return True
+                except:
+                    # Try JavaScript click on label
+                    self.driver.execute_script("arguments[0].click();", label)
+                    print("Label clicked with JavaScript.")
+                    return True
+                    
+            except Exception as e:
+                print(f"Strategy 2 failed: {e}")
+            
+            # Strategy 3: Use JavaScript to set radio button value
+            try:
+                print("Strategy 3: Using JavaScript to set radio button")
+                # Find the radio button and set it programmatically
+                self.driver.execute_script("""
+                    var radioButton = document.getElementById('transfer_rules_1');
+                    if (radioButton) {
+                        radioButton.checked = true;
+                        radioButton.dispatchEvent(new Event('change', { bubbles: true }));
+                        radioButton.dispatchEvent(new Event('click', { bubbles: true }));
+                    }
+                """)
+                print("Radio button set with JavaScript.")
+                time.sleep(1)
+                
+                # Verify if it's selected
+                radio_input = self.driver.find_element(*self.SOURCE_OF_TRANSFER_BUY_RADIO)
+                if radio_input.is_selected():
+                    print("Radio button successfully selected.")
+                    return True
+                    
+            except Exception as e:
+                print(f"Strategy 3 failed: {e}")
+            
+            # Strategy 4: Try clicking the text content directly
+            try:
+                print("Strategy 4: Clicking by text content")
+                text_element = self.driver.find_element(By.XPATH, "//label[contains(text(), 'ক্রয়')]")
+                
+                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", text_element)
+                time.sleep(1)
+                
+                # Try clicking the text element
+                try:
+                    text_element.click()
+                    print("Text element clicked successfully.")
+                    return True
+                except:
+                    self.driver.execute_script("arguments[0].click();", text_element)
+                    print("Text element clicked with JavaScript.")
+                    return True
+                    
+            except Exception as e:
+                print(f"Strategy 4 failed: {e}")
+            
+            # Strategy 5: Find parent container and click
+            try:
+                print("Strategy 5: Clicking parent container")
+                parent_element = self.driver.find_element(By.XPATH, "//input[@id='transfer_rules_1']/parent::*")
+                
+                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", parent_element)
+                time.sleep(1)
+                self.driver.execute_script("arguments[0].click();", parent_element)
+                print("Parent container clicked.")
+                return True
+                
+            except Exception as e:
+                print(f"Strategy 5 failed: {e}")
+            
+            print("All strategies failed to select the radio button!")
+            return False
+            
+        except Exception as e:
+            print(f"Critical error in select_source_of_transfer_buy: {e}")
             return False
 
     def select_plot_flat_type_residential(self):
