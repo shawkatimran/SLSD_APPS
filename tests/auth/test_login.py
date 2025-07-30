@@ -16,16 +16,4 @@ def test_valid_login(driver):
     login_page.login(login["username"], login["password"])
     time.sleep(5) 
  
-    
-
-    
-
-
-   
-
-    
-    
-
-
-
 
