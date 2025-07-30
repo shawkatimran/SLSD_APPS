@@ -4,7 +4,6 @@ from pages.BasePage import BasePage
 class LoginPage(BasePage):
     USERNAME_FIELD = (By.ID, "username")      
     PASSWORD_FIELD = (By.ID, "password")
-    LOGIN_BUTTON = (By.ID, "loginBtn")
     ERROR_MESSAGE = (By.CLASS_NAME, "error")
     LOGIN_BUTTON = (By.XPATH, "//span[@class='dlsd-btn-text' and text()='নাগরিক লগইন']")
     SIGN_IN_BUTTON = (By.ID, "kc-login")
